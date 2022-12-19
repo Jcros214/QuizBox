@@ -1,51 +1,51 @@
-from machine import Pin
 import machine
+import random
+import time
 
 class TLC5947:
-    def __init__(self, clock: int = 2, data: int = 3, latch: int = 5):
-        self.numdrivers = 1
-        self.data = Pin(data, Pin.OUT)
-        self.clock = Pin(clock, Pin.OUT)
-        self.latch = Pin(latch, Pin.OUT)
+    def __init__(self, num_channels, sclk_pin, sdin_pin, blank_pin, xlat_pin, pwm_range=4095):
+        self.num_channels = num_channels
+        self.sclk_pin = sclk_pin
+        self.sdin_pin = sdin_pin
+        self.blank_pin = blank_pin
+        self.xlat_pin = xlat_pin
+        self.pwm_range = pwm_range
 
-        self.latch.low()
+        # Set up the pins
+        self.sclk = machine.Pin(sclk_pin, machine.Pin.OUT)
+        self.sdin = machine.Pin(sdin_pin, machine.Pin.OUT)
+        self.blank = machine.Pin(blank_pin, machine.Pin.OUT)
+        self.xlat = machine.Pin(xlat_pin, machine.Pin.OUT)
+        self.xlat.value(0)
+        self.blank.value(1)  # Set the BLANK pin high to disable output
 
-        self._spi = machine.SPI(0)
+        # Initialize the channel data to all zeros
+        self.channel_data = [0] * self.num_channels
+        self.set_all(0)
 
-        # self.OE = OE
+    def set_channel(self, channel, value=4095):
+        self.channel_data[channel] = value
 
-        self.pwmbuffer = [0] * (24 * 2 * self.numdrivers)         # memset(pwmbuffer, 0, 2 * 24 * n);
-        # self.spi = machine.SPI(0)
+    def update(self):
+        # Set the BLANK pin low to enable output
+        self.blank.value(1)
 
-    def write(self):
-        self.latch.low()                                        #        digitalWrite(_lat, LOW);
-                                                                #            // 24 channels per TLC5974
-        for c in range(24 * self.numdrivers - 1, -1, -1):       #            for (int16_t c = 24 * numdrivers - 1; c >= 0; c--) {
-                                                                #                // 12 bits per channel, send MSB first
-            for b in range(11, -1, -1):                         #                for (int8_t b = 11; b >= 0; b--) {
-                self.clock.low()                                #                    digitalWrite(_clk, LOW);
-                if self.pwmbuffer[c] & (1 << b):                #                    if (pwmbuffer[c] & (1 << b))
-                    self.data.high()                            #                        digitalWrite(_dat, HIGH);
-                else:                                           #                    else
-                    self.data.low()                             #                        digitalWrite(_dat, LOW);
-                                                                #
-                self.clock.high()                               #                    digitalWrite(_clk, HIGH);
-                                                                #                }
-                                                                #            }
-        self.clock.low()                                        #        digitalWrite(_clk, LOW);
-        self.latch.high()                                       #        digitalWrite(_lat, HIGH);
-        self.latch.low()                                        #        digitalWrite(_lat, LOW);
+        # Load the channel data
+        for value in self.channel_data:
+            for i in range(12):
+                # rand = random.choice((0,1))
+                self.sdin.value((value >> (11 - i)) & 1)
+                self.sclk.value(1)
+                self.sclk.value(0)
 
-    def setLed(self, lednum, r,g,b):
-        self.setPWM(lednum * 3, r)
-        self.setPWM(lednum * 3 + 1, g)
-        self.setPWM(lednum * 3 + 2, b)
+        # Pulse the XLAT pin to latch the data
+        self.xlat.value(1)
+        self.xlat.value(0)
 
-    def setPWM(self, chan: int, pwm: int):
-        if (pwm > 4095):
-            pwm = 4095
-        try:
-            self.pwmbuffer[chan] = pwm
-        except:
-            pass
+        # Set the BLANK pin high to disable output
+        self.blank.value(0)
 
+    def set_all(self, value: int):
+        for reg in self.channel_data:
+            reg = value
+        self.update()
