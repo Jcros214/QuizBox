@@ -10,7 +10,7 @@ class DebouncedPin(Pin):
         super().__init__(pin_id, *args, **kwargs)
         self.debounce_time = debounce_time
         self.last_bounce_time = 0
-        self.last_value = self.value()
+        self.last_value = super().value()
         self.irq_handler_rise = None
         self.irq_handler_fall = None
 
@@ -76,7 +76,7 @@ class QuizBox:
             super().__init__(id, Pin.PULL_UP)
 
         def buzz(self, time: int):
-            
+            ...
 
     class Reset(DebouncedPin):
         def __init__(self, id = 17):
@@ -86,6 +86,7 @@ class QuizBox:
             pass
 
         def on_fall(self, pin):
+            print("reset fell")
             QuizBox.boxState = QuizBox.boxState + 1 if QuizBox.boxState < 3 else 0
 
 
@@ -104,7 +105,12 @@ class QuizBox:
             self.Quizzer(14, 22, 5),
         ]
 
+        self.cycle_ctr = 0
+
     def update(self):
+        self.cycle_ctr += 1
+        if self.cycle_ctr % 1000 == 0:
+            print("Cycle {}".format(self.cycle_ctr))
         if self.boxState == 1:
             for quizzer in self.quizzers:
                 if quizzer.bothread == (True,True):

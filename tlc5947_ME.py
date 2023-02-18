@@ -35,6 +35,9 @@ class TLC5947:
         self.xlat.value(0)
         self.blank.value(1)  # Set the BLANK pin high to disable output
 
+        # Set the state changed flag
+        self.state_changed = False
+
         # Initialize the channel data to all zeros
         self.channel_data = [0] * self.num_channels
         self.set_all(0)
