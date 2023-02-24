@@ -1,5 +1,10 @@
 # QuizBox 0.5
 
+## Current Status:
+- Workingish. Seats/switches/display are working, reset is not, buzzer has not been tested, and box-to-box hasn't been developed.
+
+
+
 ## Parts
 - Seatpad (x5)
 - Disable Switch (x5)

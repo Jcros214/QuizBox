@@ -1,4 +1,5 @@
 import machine
+from color import Color
 import random
 import time
 
@@ -89,7 +90,11 @@ class TLC5947:
         self.set_channel(id*3+2, int(4095*inten))
         
 
-
+    def set_led_rgb(self, led, color: Color):
+        # Set the values for the red, green, and blue channels of the LED
+        self.set_channel(led*3,   color.twelvebitr)
+        self.set_channel(led*3+1, color.twelvebitg)
+        self.set_channel(led*3+2, color.twelvebitb)
 
 
     def set_all(self, value: int):

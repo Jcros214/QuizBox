@@ -273,12 +273,19 @@ class I2cLcd(LcdApi):
 
 
 
+# Dummy Display class for testing
+# class I2C_Display(I2cLcd):
+#     def __init__(self, address=0x27):
+#         print("I2C Display init; Warning! This is a dummy class for testing purposes only!")
 
+#     def startup(self):
+#         ...
 
 class I2C_Display(I2cLcd):
     def __init__(self, address=0x27):
         super().__init__(I2C(0, sda=Pin(0), scl=Pin(1), freq=400000), 0x27, 4, 20)
         self.startup()
+        self.hide_cursor()
 
     def startup(self):
         self.blink_cursor_off()
