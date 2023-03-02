@@ -1,27 +1,18 @@
 # QuizBox 0.5
 
 ## Current Status:
-- Workingish. Seats/switches/display are working, reset is not, buzzer has not been tested, and box-to-box hasn't been developed.
+- Workingish. Seats/switches/display/reset/buzzer are working,  is not, buzzer has not been tested, and box-to-box hasn't been developed.
 
-
-
-## Parts
-- Seatpad (x5)
-- Disable Switch (x5)
-- 12 LEDs
-	- 5 pairs for quizzer seat lights
-	- Quizzer boxState light
-	- Quizmaster boxState light
-- RESET switch
-- 2004 LCD Character display
-- Pizo buzzer
-- internal
-	- RPi Pico W
-	- TLC5947
-	- USB-C box-to-box connector
+## Ideas
+- Serial communication between boxes?
+	- All that's needes is shared ground and Tx/Rx
+- Just use the micro usb port on the front for data output
+	- Can be made to work with a computer/phone
+	- Input...
+		- Test pins?
 
 ## Features (*italicized* arn't done yet)
-- Hardware is configured
+- Hardware
 	- Seats/Switches/Reset
 	- Display
 	- TLC5947

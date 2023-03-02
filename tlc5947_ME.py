@@ -32,9 +32,9 @@ class TLC5947:
         self.sclk = machine.Pin(sclk_pin, machine.Pin.OUT)
         self.sdin = machine.Pin(sdin_pin, machine.Pin.OUT)
         self.blank = machine.Pin(blank_pin, machine.Pin.OUT)
+        self.blank.value(1)  # Set the BLANK pin high to disable output
         self.xlat = machine.Pin(xlat_pin, machine.Pin.OUT)
         self.xlat.value(0)
-        self.blank.value(1)  # Set the BLANK pin high to disable output
 
         # Set the state changed flag
         self.state_changed = False
@@ -42,6 +42,13 @@ class TLC5947:
         # Initialize the channel data to all zeros
         self.channel_data = [0] * self.num_channels
         self.set_all(0)
+        self.set_channel(23, 100)
+        self.update()
+
+        # for i in range(0, 4095,10):
+        #     self.set_all(i)
+        #     self.update()
+        #     time.sleep(0.001)
 
     def update(self):
         # Check the state changed flag
@@ -49,7 +56,8 @@ class TLC5947:
             return
 
         # Set the BLANK pin low to enable output
-        self.blank.value(1)
+        # self.blank.value(1)
+
 
         # Load the channel data
         for value in self.channel_data:
@@ -74,16 +82,7 @@ class TLC5947:
         if value != self.channel_data[-channel-1]:
             self.channel_data[-channel-1] = value
             self.state_changed = True
-    # # Set LED to hex value
-    # def set_led(self, led, value: int):
-    #     # Convert the hexadecimal color value to a tuple of 8-bit RGB values
-    #     rgb_8bit = hex_to_rgb(value)
-    #     # Convert the 8-bit RGB values to 12-bit values
-    #     # rgb_12bit = convert_8bit_to_12bit(rgb_8bit)
-    #     # Set the values for the red, green, and blue channels of the LED
-    #     self.set_channel(led*3, rgb_8bit[0])
-    #     self.set_channel(led*3+1, rgb_8bit[1])
-    #     self.set_channel(led*3+2, rgb_8bit[2])
+
     def set_led(self, id, inten = .5):
         self.set_channel(id*3  , int(4095*inten))
         self.set_channel(id*3+1, int(4095*inten))
@@ -98,6 +97,67 @@ class TLC5947:
 
 
     def set_all(self, value: int):
-        for reg in self.channel_data:
-            reg = value
+        for ch in range(24):
+            self.set_channel(ch, value)
         self.update()
+
+    def set_all_rgb(self, color: Color):
+        for led in range(8):
+            self.set_led_rgb(led, color)
+        self.update()
+
+
+    # def fade_between_colors(self, start_color: Color, end_color: Color, msec: float):
+    #     start_time = time.ticks_ms()
+    #     end_time = start_time + (msec)
+
+    #     while time.ticks_ms() < end_time:
+    #         self.set_all_rgb(Color.lerp(start_color, end_color, time.ticks_ms() / end_time))
+
+    #     self.set_all_rgb(end_color)
+
+
+
+        # # Precompute the array of colors
+        # colors = []
+        # for i in range(self.num_channels // 3):
+        #     r,g,b = int(start_color.twelvebitr + (end_color.twelvebitr - start_color.twelvebitr) * i / (self.num_channels // 3 - 1)), int(start_color.twelvebitg + (end_color.twelvebitg - start_color.twelvebitg) * i / (self.num_channels // 3 - 1)), int(start_color.twelvebitb + (end_color.twelvebitb - start_color.twelvebitb) * i / (self.num_channels // 3 - 1))
+
+        #     print(r,g,b)
+        #     input(0)
+
+        #     color = Color.fromRGB(r,g,b)
+        #     colors.append(color)
+
+        # print(colors)
+
+        # # Loop over the array of colors
+        # for color in colors:
+        #     elapsed_time = time.ticks_diff(time.ticks_ms(), start_time)
+
+        #     # Set all LEDs to the current color
+        #     for led in range(self.num_channels // 3):
+        #         self.set_led_rgb(led, color)
+        #     self.update()
+
+        #     # Sleep for the remaining time
+        #     remaining_time = duration - elapsed_time
+        #     # if remaining_time > 0:
+        #     #     time.sleep_ms(int(remaining_time))
+
+        # self.set_all(0)
+
+
+
+
+
+# if __name__ == "__main__":
+#     tlc = TLC5947(24, sclk_pin=2, sdin_pin=3, blank_pin=4, xlat_pin=5)
+
+#     color1 =   Color().fromRGB(000, 000, 255)  # Blue
+#     color2 =   Color().fromRGB(000, 255, 000)  # Green
+
+#     # color3 =   Color().fromRGB(255, 000, 000)  # Red
+#     # color2_5 = Color().fromRGB(000, 255, 000)  # Green
+
+#     tlc.fade_between_colors(color1, color2, 5000)

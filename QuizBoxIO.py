@@ -1,6 +1,7 @@
 from machine import Pin 
 from debounced_pin import DebouncedPin
 
+# import logging
 
 from i2c_display_ME import I2C_Display
 from tlc5947_ME import TLC5947
@@ -53,11 +54,12 @@ import utime
 
 
 class QuizBox:
+    DEBUG_MODE = False
     boxState = 1
     boxStateHasChanged = False
     displaytimer = 0
     displaytimerbuffer = 0
-    color = Color().fromHex("#F56600")
+    color = Color.fromHex("#F56600")
 
     class Timer:
         def __init__(self):
@@ -86,15 +88,18 @@ class QuizBox:
         def __init__(self, id = 16):
             super().__init__(id, Pin.PULL_UP)
 
-        def buzz(self, time: int):
-            self.high()
-            sleep(time)
-            self.low()
+        def buzz(self, time: float):
+            if not QuizBox.DEBUG_MODE:
+                self.high()
+                sleep(time)
+                self.low()
+            else:
+                print("Skipping buzzing due to debug mode")
 
     class Reset(DebouncedPin):
         def __init__(self, id=28):
-            super().__init__(id, 100, DebouncedPin.IN, DebouncedPin.PULL_UP)
-            
+            super().__init__(id, 200, DebouncedPin.IN, DebouncedPin.PULL_UP)
+
             print("initing reset")
 
         def on_rise(self, pin):
@@ -112,13 +117,17 @@ class QuizBox:
 
 
     def __init__(self) -> None:
-        self.display = I2C_Display()
+
+        print("Initializing QuizBox\n---------------_")
+        print("Debug mode: " + "Enabled" if QuizBox.DEBUG_MODE else "Disabled")
+
         self.tlc = TLC5947(24, sclk_pin=2, sdin_pin=3, blank_pin=4, xlat_pin=5)
+
+        self.display = I2C_Display()
+
         self.reset = self.Reset()
 
         self.timer = self.Timer()
-
-
 
         # self.reset = Pin(28, Pin.IN, Pin.PULL_UP)
 
@@ -135,6 +144,12 @@ class QuizBox:
         self.cycle_ctr = 0
         self.boxStateChange()
 
+        if QuizBox.DEBUG_MODE:
+            print("Debug mode enabled")
+            print("Finished initializing QuizBox\n----------------")
+
+    
+
     def update(self):
         # self.cycle_ctr += 1
         # if self.cycle_ctr % 1000 == 0:
@@ -145,6 +160,9 @@ class QuizBox:
             QuizBox.boxStateHasChanged = False
         
         if QuizBox.boxState == 1:
+            self.tlc.set_led_rgb(5, Color.fromHex("#FF0000"))
+            self.tlc.set_led_rgb(6, Color.fromHex("#00FF00"))
+
             for quizzer in self.quizzers:
                 if quizzer.bothread == (True,True):
                     self.tlc.set_led_rgb(quizzer.num - 1, QuizBox.color)
@@ -153,10 +171,12 @@ class QuizBox:
             self.tlc.update()
 
         elif QuizBox.boxState == 2:
+
             for quizzer in self.quizzers:
                 if quizzer.bothread == (True,True):
-                    self.tlc.set_led(quizzer.num - 1, 1)
+                    self.tlc.set_led_rgb(quizzer.num - 1, QuizBox.color)
                     self.tlc.update()
+                    self.buzzer.buzz(0.5)
                     QuizBox.setBoxState(3)
                     break
 
