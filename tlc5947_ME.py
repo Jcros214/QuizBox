@@ -89,11 +89,13 @@ class TLC5947:
         self.set_channel(id*3+2, int(4095*inten))
         
 
-    def set_led_rgb(self, led, color: Color):
+    def set_led_rgb(self, led: int, color: Color):
+
+        channels = [led for led in range(led*3, led*3+3)]
+
         # Set the values for the red, green, and blue channels of the LED
-        self.set_channel(led*3,   color.twelvebitr)
-        self.set_channel(led*3+1, color.twelvebitg)
-        self.set_channel(led*3+2, color.twelvebitb)
+        for ch, cl in zip(channels, color.getValueAs12Bit()):
+            self.set_channel(ch, cl)
 
 
     def set_all(self, value: int):

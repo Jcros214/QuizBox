@@ -54,12 +54,28 @@ import utime
 
 
 class QuizBox:
-    DEBUG_MODE = False
+    DEBUG_MODE = True
     boxState = 1
     boxStateHasChanged = False
     displaytimer = 0
     displaytimerbuffer = 0
     color = Color.fromHex("#F56600")
+
+    # Colors at state [front, back]
+    # colors = {
+    #     1: [amber, green],
+    #     2: [off, amber],
+    #     3: [red, red]
+    # }
+
+    # Colors at state [front, back]
+    colors = {
+        1: [Color.fromHex("#FFBF00"), Color.fromHex("#00FF00")],
+        2: [Color.fromHex("#000000"), Color.fromHex("#FFBF00")],
+        3: [Color.fromHex("#FF0000"), Color.fromHex("#FF0000")]
+    }
+
+
 
     class Timer:
         def __init__(self):
@@ -151,6 +167,10 @@ class QuizBox:
     
 
     def update(self):
+        # Set state lights to box state
+        for led, color in zip([5,6], self.colors[QuizBox.boxState]):
+            self.tlc.set_led_rgb(led, color)
+
         # self.cycle_ctr += 1
         # if self.cycle_ctr % 1000 == 0:
             # print(f"Cycle {self.cycle_ctr}\nBoxState: {QuizBox.boxState}\nReset: {self.reset.value()}\nTimer: {self.timer.wholeSecondsRemaining()}\n")
@@ -160,8 +180,6 @@ class QuizBox:
             QuizBox.boxStateHasChanged = False
         
         if QuizBox.boxState == 1:
-            self.tlc.set_led_rgb(5, Color.fromHex("#FF0000"))
-            self.tlc.set_led_rgb(6, Color.fromHex("#00FF00"))
 
             for quizzer in self.quizzers:
                 if quizzer.bothread == (True,True):
