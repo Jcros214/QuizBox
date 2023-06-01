@@ -1,3 +1,4 @@
+from hardwareerror import HardwareError
 import time
 
 class LcdApi:
@@ -63,8 +64,11 @@ class LcdApi:
 
     def clear(self):
         # Clears the LCD display and moves the cursor to the top left corner
-        self.hal_write_command(self.LCD_CLR)
-        self.hal_write_command(self.LCD_HOME)
+        try:
+            self.hal_write_command(self.LCD_CLR)
+            self.hal_write_command(self.LCD_HOME)
+        except OSError:
+            raise HardwareError('I2C Display not connected. Check pins and address.')
         self.cursor_x = 0
         self.cursor_y = 0
 
@@ -188,7 +192,7 @@ class LcdApi:
 import utime
 import gc
 
-from machine import I2C, Pin
+from machine import I2C, Pin, SoftI2C
 
 # PCF8574 pin definitions
 MASK_RS = 0x01       # P0
@@ -205,7 +209,12 @@ class I2cLcd(LcdApi):
     def __init__(self, i2c, i2c_addr, num_lines, num_columns):
         self.i2c = i2c
         self.i2c_addr = i2c_addr
-        self.i2c.writeto(self.i2c_addr, bytes([0]))
+
+        try:
+            self.i2c.writeto(self.i2c_addr, bytes([0]))
+        except OSError:
+            raise HardwareError("Could not connect to I2C Display. Check the pins and address.")
+
         utime.sleep_ms(20)   # Allow LCD time to powerup
         # Send reset 3 times
         self.hal_write_init_nibble(self.LCD_FUNCTION_RESET)
@@ -274,19 +283,26 @@ class I2cLcd(LcdApi):
 
 
 # Dummy Display class for testing
-# class I2C_Display(I2cLcd):
-#     def __init__(self, address=0x27):
-#         print("I2C Display init; Warning! This is a dummy class for testing purposes only!")
+class DUMMY_I2C_Display:
+    def __init__(self, address=0x27):
+        print("I2C Display init; Warning! This is a dummy class for testing purposes only!")
 
-#     def startup(self):
-#         ...
+    def startup(self):
+        ...
+
+    def clear(self):
+        ...
+
+    def putstr(self, string):
+        print(string)
 
 class I2C_Display(I2cLcd):
-    def __init__(self, address=0x27):
-        super().__init__(I2C(0, sda=Pin(0), scl=Pin(1), freq=400000), 0x27, 4, 20)
+    def __init__(self, address=0x27, sda=12, scl=13, perif=0):
+        super().__init__(I2C(perif, sda=Pin(sda), scl=Pin(scl), freq=40000), address, 4, 20)
         self.startup()
         self.hide_cursor()
 
     def startup(self):
         self.blink_cursor_off()
-        self.putstr("   QuizBox 1.0.0    \n")
+        self.clear()
+        # self.putstr("   QuizBox 1.0.0    \n")

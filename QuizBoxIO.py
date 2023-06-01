@@ -7,50 +7,11 @@ from i2c_display_ME import I2C_Display
 from tlc5947_ME import TLC5947
 from quizzer import Quizzer
 from color import Color
+from Box2Box import Box2Box
 
 
 from time import sleep
 import utime
-
-# class DebouncedPin(Pin):
-#     def __init__(self, pin_id, debounce_time=20, *args, **kwargs):
-#         self.pin_id = pin_id
-#         super().__init__(pin_id, *args, **kwargs)
-#         self.debounce_time = debounce_time
-#         self.last_bounce_time = 0
-#         self.last_value = super().value()
-#         self.irq_handler_rise = None
-#         self.irq_handler_fall = None
-
-#         self.irq(self.on_rise, self.IRQ_RISING)
-#         self.irq(self.on_fall, self.IRQ_FALLING)
-        
-
-#     def value(self, *args, **kwargs):
-#         current_time = time_pulse_us(Pin(self.pin_id), 1)
-#         if current_time - self.last_bounce_time > self.debounce_time:
-#             new_value = super().value(*args, **kwargs)
-#             if new_value != self.last_value:
-#                 self.last_value = new_value
-#                 if new_value == 1 and self.irq_handler_rise is not None:
-#                     self.irq_handler_rise()
-#                 elif new_value == 0 and self.irq_handler_fall is not None:
-#                     self.irq_handler_fall()
-#                 self.last_bounce_time = current_time
-#         return self.last_value
-
-#     def irq(self, handler=None, trigger=Pin.IRQ_FALLING):
-#         if trigger == Pin.IRQ_RISING:
-#             self.irq_handler_rise = handler
-#         elif trigger == Pin.IRQ_FALLING:
-#             self.irq_handler_fall = handler
-    
-#     def on_rise(self):
-#         pass
-    
-#     def on_fall(self):
-#         pass
-
 
 
 class QuizBox:
@@ -70,12 +31,10 @@ class QuizBox:
 
     # Colors at state [front, back]
     colors = {
-        1: [Color.fromHex("#FFBF00"), Color.fromHex("#00FF00")],
-        2: [Color.fromHex("#000000"), Color.fromHex("#FFBF00")],
-        3: [Color.fromHex("#FF0000"), Color.fromHex("#FF0000")]
+        1: [Color.fromHex("#806000"), Color.fromHex("#008000")],
+        2: [Color.fromHex("#000000"), Color.fromHex("#806000")],
+        3: [Color.fromHex("#800000"), Color.fromHex("#800000")]
     }
-
-
 
     class Timer:
         def __init__(self):
@@ -98,10 +57,8 @@ class QuizBox:
                 return True
             return False
 
-
-
     class Buzzer(Pin):
-        def __init__(self, id = 16):
+        def __init__(self, id = 14):
             super().__init__(id, Pin.PULL_UP)
 
         def buzz(self, time: float):
@@ -113,7 +70,7 @@ class QuizBox:
                 print("Skipping buzzing due to debug mode")
 
     class Reset(DebouncedPin):
-        def __init__(self, id=28):
+        def __init__(self, id=15):
             super().__init__(id, 200, DebouncedPin.IN, DebouncedPin.PULL_UP)
 
             print("initing reset")
@@ -130,31 +87,36 @@ class QuizBox:
 
 
 
-
-
     def __init__(self) -> None:
 
-        print("Initializing QuizBox\n---------------_")
+        print("Initializing QuizBox\n----------------")
         print("Debug mode: " + "Enabled" if QuizBox.DEBUG_MODE else "Disabled")
 
-        self.tlc = TLC5947(24, sclk_pin=2, sdin_pin=3, blank_pin=4, xlat_pin=5)
+        self.tlc = TLC5947()
 
         self.display = I2C_Display()
+        self.display.putstr("   QuizBox 1.0.0    \n")
 
         self.reset = self.Reset()
 
         self.timer = self.Timer()
 
-        # self.reset = Pin(28, Pin.IN, Pin.PULL_UP)
-
         self.buzzer = self.Buzzer()
 
+        self.coms = Box2Box()
+
+        self.coms.setState1(lambda holding: (QuizBox.setBoxState(1), self.overide_holding(holding)))
+        self.coms.setState2(lambda: QuizBox.setBoxState(2))
+        self.coms.setState3(lambda x: QuizBox.setBoxState(3))
+
+
+
         self.quizzers = [
-            Quizzer(10, 18, 1),
-            Quizzer(11, 19, 2),
-            Quizzer(12, 20, 3),
-            Quizzer(13, 21, 4),
-            Quizzer(14, 22, 5),
+            Quizzer(16, 21, 1),
+            Quizzer(17, 22, 2),
+            Quizzer(18, 26, 3),
+            Quizzer(19, 27, 4),
+            Quizzer(20, 28, 5),
         ]
 
         self.cycle_ctr = 0
@@ -164,17 +126,22 @@ class QuizBox:
             print("Debug mode enabled")
             print("Finished initializing QuizBox\n----------------")
 
-    
-
     def update(self):
+        # print("Still alive...")
+
+        if (msg := self.coms.update()) != None and len(msg) > 0:
+            self.display.clear()
+            self.display.putstr(msg)
+            print(msg)
+        
+        # print([(self.quizzers[i].switchpin, self.quizzers[i].switchval) for i  in range(5)])
+
         # Set state lights to box state
         for led, color in zip([5,6], self.colors[QuizBox.boxState]):
             self.tlc.set_led_rgb(led, color)
+        self.tlc.update()
 
-        # self.cycle_ctr += 1
-        # if self.cycle_ctr % 1000 == 0:
-            # print(f"Cycle {self.cycle_ctr}\nBoxState: {QuizBox.boxState}\nReset: {self.reset.value()}\nTimer: {self.timer.wholeSecondsRemaining()}\n")
-        
+
         if QuizBox.boxStateHasChanged:
             self.boxStateChange()
             QuizBox.boxStateHasChanged = False
@@ -208,14 +175,18 @@ class QuizBox:
                     else:
                         self.display.putstr(f" {self.timer.wholeSecondsRemaining()}")
             else:
-                self.setBoxState(1)
-
-
+                # self.setBoxState(1)
+                ...
 
         else:
             QuizBox.setBoxState(1)
             raise ValueError("ERROR: BoxState should be in [1,2,3]. Setting to 1")
-    
+        
+    def override_holding(self, holding: bool | None = None):
+        if holding != None:
+            self.HOLDING_OVERRIDE = holding
+
+
     @staticmethod
     def resetUpdate():
         if QuizBox.boxState==1:
@@ -232,7 +203,10 @@ class QuizBox:
     @staticmethod
     def setBoxState(state):
         print(f"Setting boxState from {QuizBox.boxState} to {state} ({round(utime.time(),2)})")
-        QuizBox.boxState = state
+
+        if state in [1,2,3]:
+            QuizBox.boxState = state
+
         QuizBox.boxStateHasChanged = True
 
     def boxStateChange(self):
@@ -246,6 +220,22 @@ class QuizBox:
 
         self.display.putstr(f"State: {stateDict[QuizBox.boxState]}")
 
+        # Messages should be instructions.
+        b"<S: 1>"
+        b"<S: 1, Holding>"
+        b"<S: 2>"
+        b"<S: 3, Timer: {}>"
+
+        param = ''
+
+        if QuizBox.boxState == 1:
+            param = ', Holding' if not self.reset.value() else ''
+        elif QuizBox.boxState == 3:
+            param = f", Timer: {self.timer.wholeSecondsRemaining()}"
+
+        self.coms.write(f"<S: {QuizBox.boxState}{param}>")
+        print(f'sent state f"<S: {QuizBox.boxState}{param}>"')
+
         if QuizBox.boxState == 3:
             self.timer.startCoutndown(32)
 
@@ -253,11 +243,11 @@ class QuizBox:
     def sendToConnectedBoxes(self):
         pass
 
-
-if __name__ == '__main__':
+def main():
     box = QuizBox()
-    # tlc = TLC5947(24, sclk_pin=2, sdin_pin=3, blank_pin=4, xlat_pin=5)
 
     while True:
         box.update()
-        # time.sleep(1)
+
+if __name__ == '__main__':
+    main()

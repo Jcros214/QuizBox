@@ -20,7 +20,7 @@ import time
 #     return convert_8bit_to_12bit(output)
 
 class TLC5947:
-    def __init__(self, num_channels, sclk_pin, sdin_pin, blank_pin, xlat_pin, pwm_range=4095):
+    def __init__(self, num_channels=24, sclk_pin=9, sdin_pin=8, blank_pin=10, xlat_pin=11, pwm_range=4095):
         self.num_channels = num_channels
         self.sclk_pin = sclk_pin
         self.sdin_pin = sdin_pin
@@ -38,6 +38,8 @@ class TLC5947:
 
         # Set the state changed flag
         self.state_changed = False
+
+        self.blank.value(0)
 
         # Initialize the channel data to all zeros
         self.channel_data = [0] * self.num_channels
@@ -153,13 +155,17 @@ class TLC5947:
 
 
 
-# if __name__ == "__main__":
-#     tlc = TLC5947(24, sclk_pin=2, sdin_pin=3, blank_pin=4, xlat_pin=5)
+from time import sleep
 
-#     color1 =   Color().fromRGB(000, 000, 255)  # Blue
-#     color2 =   Color().fromRGB(000, 255, 000)  # Green
+def tlc_loop():
+    tlc = TLC5947()
 
-#     # color3 =   Color().fromRGB(255, 000, 000)  # Red
-#     # color2_5 = Color().fromRGB(000, 255, 000)  # Green
+    while True:
+        for ch in range(24):
+            tlc.set_channel(ch, 4095//2)
+            tlc.update()
+            sleep(0.3)
+            tlc.set_channel(ch, 0)
 
-#     tlc.fade_between_colors(color1, color2, 5000)
+if __name__ == "__main__":
+    tlc_loop()
