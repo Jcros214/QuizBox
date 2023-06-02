@@ -80,8 +80,13 @@ else:
 while True:
     main_py_update_url = "https://raw.githubusercontent.com/Jcros214/QuizBox/sandbox/main.py"
     request = requests.get(main_py_update_url)
-    print(request.content)
-    request.close()
-    blink_onboard_led(3)
-    time.sleep(2)
 
+    code = str(request.content, 'utf-8')
+
+    if code.find('main()') != -1:
+        print('main() found')
+        # Save main.py to flash
+        with open('main.py', 'w') as f:
+            f.write(code)
+        # Run main.py
+        exec(code)
