@@ -293,6 +293,6 @@ class I2C_Display(I2cLcd):
 def main():
     disp = I2C_Display()
     disp.clear()
-    disp.putstr("This code isn't production ready! Switch to sandbox or testing.")
+    disp.putstr("This code isn't production ready! Switch to sandbox.")
     
 main()
