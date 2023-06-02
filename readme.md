@@ -1,17 +1,17 @@
-# QuizBox 0.5
+# QuizBox
 
 ## Current Status:
-- Workingish. Seats/switches/display/reset/buzzer are working,  is not, buzzer has not been tested, and box-to-box hasn't been developed.
+- All features at least partially implemented
+- sliding switches are not always being read correctly. No idea why.
 
 
-## Features (*italicized* arn't done yet)
-- Hardware
-    - Seats/Switches/Reset
-    - Display
-    - TLC5947
-    - *Box-to-Box*
-- Quizzer leds are toggled based on disable switches and seatpads
-- QuizBox can be armed so that when a quizzer jumps, it beeps and a timer is started
-- *Online Features*
-    - Current state is reported to the cloud (quizbox.app on DigitalOcean)
-    - QuizBox can be controlled remotely
+## Features
+- Box Hardware
+    - Seatpads 
+        - Made by [Steve Kirkman](http://www.quizequipment.com/information.htm#:~:text=Seat%20Pads%20for%20Jump%2Dseat%20programs.) (connected through a PS/2 port)
+    - Disable Switches (As with seatpads, one per quizzer)
+    - Reset Switch
+    - I2C Display
+    - LEDs for quizzers to test their lights and to indicate what state the box is in (connected through a TLC5947)
+    - RJ-45 port for connecting two or more boxes together and for power
+    - Buzzer
