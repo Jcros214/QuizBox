@@ -586,7 +586,7 @@ class I2C_Display(I2cLcd):
     def startup(self):
         self.blink_cursor_off()
         self.clear()
-        self.putstr("   QuizBox 1.0.0    \n")
+        # self.putstr("   QuizBox 1.0.0    \n")
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -762,7 +762,7 @@ class QuizBox:
         self.tlc = TLC5947()
 
         self.display = I2C_Display()
-        self.display.putstr("   QuizBox 1.0.0    \n")
+        # self.display.putstr("   QuizBox 1.0.0    \n")
 
         self.reset = self.Reset()
 
@@ -915,7 +915,7 @@ def main():
         latest_checksum = f.read()
 
     box.display.putstr(f"{'QuizBox - ' + BRANCH:^20}\n{latest_checksum[:6]:^20}\n")
-    sleep(2)
+    sleep(5)
 
     while True:
         box.update()

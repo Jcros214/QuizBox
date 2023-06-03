@@ -81,24 +81,23 @@ else:
 # last_state = False
 # current_state = False
 
-while True:
-    github_api_url = f"https://api.github.com/repos/jcros214/QuizBox/branches/{BRANCH}"
+github_api_url = f"https://api.github.com/repos/jcros214/QuizBox/branches/{BRANCH}"
 
-    api_request = requests.get(github_api_url)
+api_request = requests.get(github_api_url)
 
-    if api_request.status_code == 200:
-        checksum = api_request.json()['commit']['sha']
-        with open('main_py_checksum.txt', 'wr') as f:
-            if checksum != f.read():
-                f.write(checksum)
+if api_request.status_code == 200:
+    checksum = api_request.json()['commit']['sha']
+    print(checksum)
+    with open('main_py_checksum.txt', 'w') as f:
+        f.write(checksum)
 
-                main_py_update_url = f"https://raw.githubusercontent.com/Jcros214/QuizBox/{BRANCH}/main.py"
+    main_py_update_url = f"https://raw.githubusercontent.com/Jcros214/QuizBox/{BRANCH}/main.py"
 
-                request = requests.get(main_py_update_url)
-                code = str(request.content, 'utf-8')
+    request = requests.get(main_py_update_url)
+    code = str(request.content, 'utf-8')
 
-                if code.find('main()') != -1:
-                    print('main() found')
-                    # Save main.py to flash
-                    with open('main.py', 'w') as f:
-                        f.write(code)
+    if code.find('main()') != -1:
+        print('main() found')
+        # Save main.py to flash
+        with open('main.py', 'w') as f:
+            f.write(code)
