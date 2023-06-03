@@ -914,8 +914,13 @@ def main():
     with open('main_py_checksum.txt', 'r') as f:
         latest_checksum = f.read()
 
+    box.display.clear()
+
     box.display.putstr(f"{'QuizBox - ' + BRANCH:^20}\n{latest_checksum[:6]:^20}\n")
+
     sleep(5)
+
+    box.display.clear()
 
     while True:
         box.update()

@@ -83,7 +83,7 @@ else:
 
 github_api_url = f"https://api.github.com/repos/jcros214/QuizBox/branches/{BRANCH}"
 
-api_request = requests.get(github_api_url)
+api_request = requests.get(github_api_url, headers={'User-Agent': 'jcros214'})
 
 if api_request.status_code == 200:
     checksum = api_request.json()['commit']['sha']
