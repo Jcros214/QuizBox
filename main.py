@@ -163,11 +163,11 @@ class Box2Box:
     b"<S: 3, Timer: {}>"
 
     """
-    LATEST_MSG_FROM: None | UART = None
+    LATEST_MSG = None
 
     class Message:
         def __init__(self, msg: bytes | None, sender: UART) -> None:
-            if msg == None:
+            if msg is None:
                 self.msg = b""
             else:
                 self.msg = msg
@@ -179,7 +179,7 @@ class Box2Box:
             return Box2Box.Message(msg.encode("utf-8"), sender)
 
         def getMsg(self):
-            if self.msg == None:
+            if self.msg is None:
                 return None
 
             message = str(self)
@@ -237,10 +237,12 @@ class Box2Box:
     def parseInput(self, message: Message) -> None | str:
         msg = message.getMsg()
 
-        if msg == None:
+        if msg is None:
             return
 
-        self.write(msg, self.getOtherCom(message.sender))
+        if Box2Box.LATEST_MSG != message:
+            Box2Box.LATEST_MSG = message
+            self.write(msg, self.getOtherCom(message.sender))
 
         if msg[3] == '1':
             if msg[6:13] == "Holding":
@@ -788,7 +790,7 @@ class QuizBox:
     def update(self):
         # print("Still alive...")
 
-        if (msg := self.coms.update()) != None and len(msg) > 0:
+        if (msg := self.coms.update()) is not None and len(msg) > 0:
             self.display.clear()
             self.display.putstr(msg)
             print(msg)
