@@ -1,3 +1,5 @@
+BRANCH = 'sandbox'
+
 # ----------------------------------------------------------------------------------------------------
 # Package Imports
 # ----------------------------------------------------------------------------------------------------
@@ -584,7 +586,7 @@ class I2C_Display(I2cLcd):
     def startup(self):
         self.blink_cursor_off()
         self.clear()
-        # self.putstr("   QuizBox 1.0.0    \n")
+        self.putstr("   QuizBox 1.0.0    \n")
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -902,11 +904,18 @@ class QuizBox:
         if QuizBox.boxState == 3:
             self.timer.startCoutndown(32)
 
+
 # ----------------------------------------------------------------------------------------------------
 # Main Code
 # ----------------------------------------------------------------------------------------------------
 def main():
     box = QuizBox()
+
+    with open('main_py_checksum.txt', 'r') as f:
+        latest_checksum = f.read()
+
+    box.display.putstr(f"{'QuizBox - ' + BRANCH:^20}\n{latest_checksum[:6]:^20}\n")
+    sleep(2)
 
     while True:
         box.update()

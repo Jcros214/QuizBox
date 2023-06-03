@@ -1,3 +1,5 @@
+BRANCH = 'sandbox'
+
 # Startup script
 # Connect to the internet, download main.py from github, and run it
 # If unable to connect, use last saved main.py
@@ -20,7 +22,7 @@ wlan.active(True)
 # wlan.config(pm = 0xa11140)
 
 # See the MAC address in the wireless chip OTP
-mac = ubinascii.hexlify(network.WLAN().config('mac'),':').decode()
+mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
 print('mac = ' + mac)
 
 # Other things to query
@@ -43,7 +45,8 @@ while timeout > 0:
     print('Waiting for connection...')
     time.sleep(1)
 
-# Define blinking function for onboard LED to indicate error codes    
+
+# Define blinking function for onboard LED to indicate error codes
 def blink_onboard_led(num_blinks):
     led = machine.Pin('LED', machine.Pin.OUT)
     for i in range(num_blinks):
@@ -51,7 +54,8 @@ def blink_onboard_led(num_blinks):
         time.sleep(.2)
         led.off()
         time.sleep(.2)
-    
+
+
 # Handle connection error
 # Error meanings
 # 0  Link Down
@@ -71,22 +75,30 @@ else:
     print('Connected')
     status = wlan.ifconfig()
     print('ip = ' + status[0])
-    
+
 # door_bell = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_DOWN)
 
 # last_state = False
 # current_state = False
 
 while True:
-    main_py_update_url = "https://raw.githubusercontent.com/Jcros214/QuizBox/sandbox/main.py"
-    request = requests.get(main_py_update_url)
+    github_api_url = f"https://api.github.com/repos/jcros214/QuizBox/branches/{BRANCH}"
 
-    code = str(request.content, 'utf-8')
+    api_request = requests.get(github_api_url)
 
-    if code.find('main()') != -1:
-        print('main() found')
-        # Save main.py to flash
-        with open('main.py', 'w') as f:
-            f.write(code)
-        # Run main.py
-        exec(code)
+    if api_request.status_code == 200:
+        checksum = api_request.json()['commit']['sha']
+        with open('main_py_checksum.txt', 'wr') as f:
+            if checksum != f.read():
+                f.write(checksum)
+
+                main_py_update_url = f"https://raw.githubusercontent.com/Jcros214/QuizBox/{BRANCH}/main.py"
+
+                request = requests.get(main_py_update_url)
+                code = str(request.content, 'utf-8')
+
+                if code.find('main()') != -1:
+                    print('main() found')
+                    # Save main.py to flash
+                    with open('main.py', 'w') as f:
+                        f.write(code)
