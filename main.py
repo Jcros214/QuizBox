@@ -11,7 +11,6 @@ from time import sleep
 import re
 
 
-
 # ----------------------------------------------------------------------------------------------------
 # Custom Exceptions
 # ----------------------------------------------------------------------------------------------------
@@ -30,10 +29,10 @@ class Color:
         self.b = b
 
     def getValueAs8Bit(self) -> tuple[int, int, int]:
-        return int(self.r*256), int(self.g*256), int(self.b*256)
+        return int(self.r * 256), int(self.g * 256), int(self.b * 256)
 
     def getValueAs12Bit(self) -> tuple[int, int, int]:
-        return int(self.r*4096), int(self.g*4096), int(self.b*4096)
+        return int(self.r * 4096), int(self.g * 4096), int(self.b * 4096)
 
     @staticmethod
     def fromHex(hex: str):
@@ -62,10 +61,8 @@ class Color:
         color.b = int(b)
         return color
 
-
     def __repr__(self) -> str:
         return f"Color({self.r}, {self.g}, {self.b})"
-
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -103,6 +100,7 @@ class DebouncedPin(Pin):
             if current_time - self.timeAtLastUpdate >= self.debounce_time:
                 func(pin)
             self.timeAtLastUpdate = current_time
+
         return debounced_handler
 
 
@@ -111,14 +109,15 @@ class DebouncedPin(Pin):
 # ----------------------------------------------------------------------------------------------------
 class Quizzer:
     color = 0xF66733
+
     def __init__(self, seat: int = -1, switch: int = -1, num: int = -1) -> None:
-        self.seatpin = Pin(seat, mode=Pin.IN,  pull=Pin.PULL_UP)
+        self.seatpin = Pin(seat, mode=Pin.IN, pull=Pin.PULL_UP)
         self.switchpin = Pin(switch, mode=Pin.IN, pull=Pin.PULL_UP)
         self.num = num
 
         self.seatval = self.seatpin.value()
         self.switchval = self.switchpin.value()
-    
+
     @property
     def getSeat(self):
         self.seatval = not self.seatpin.value()
@@ -145,10 +144,11 @@ class QuizSite:
     def get(self, key) -> str:
         # Get value from internet
         return str()
-    
+
     def post() -> None:
         # Post value to internet
         pass
+
 
 # ----------------------------------------------------------------------------------------------------
 # Box2Box
@@ -163,8 +163,7 @@ class Box2Box:
     b"<S: 3, Timer: {}>"
 
     """
-    LATEST_MSG_FROM : None | UART = None
-
+    LATEST_MSG_FROM: None | UART = None
 
     class Message:
         def __init__(self, msg: bytes | None, sender: UART) -> None:
@@ -178,7 +177,7 @@ class Box2Box:
         @staticmethod
         def init_from_str(msg: str, sender: UART):
             return Box2Box.Message(msg.encode("utf-8"), sender)
-        
+
         def getMsg(self):
             if self.msg == None:
                 return None
@@ -187,35 +186,31 @@ class Box2Box:
             latest_msg = ""
 
             for ind in range(len(message)):
-                if message[-(ind+1)] == "<":
+                if message[-(ind + 1)] == "<":
                     latest_msg = message[-ind:-1]
                     break
             else:
                 return None
-                
 
-
-            if latest_msg == "S: 1" or latest_msg == "S: 1, Holding" or latest_msg == "S: 2" or latest_msg.startswith("S: 3, Timer: "):
+            if latest_msg == "S: 1" or latest_msg == "S: 1, Holding" or latest_msg == "S: 2" or latest_msg.startswith(
+                    "S: 3, Timer: "):
                 return latest_msg
             else:
                 return None
                 # raise error?
-
-            
 
         def __str__(self) -> str:
             try:
                 return self.msg.decode("utf-8")
             except:
                 return ''
-        
+
         def __bytes__(self) -> bytes:
             return self.msg
-        
 
     # TX,RX,INT,ACK
-    COM1 = [0,1,2,3]
-    COM2 = [4,5,6,7]
+    COM1 = [0, 1, 2, 3]
+    COM2 = [4, 5, 6, 7]
 
     def __init__(self) -> None:
         self.com_left = UART(0, 9600, tx=Pin(Box2Box.COM1[0]), rx=Pin(Box2Box.COM1[1]))
@@ -224,7 +219,7 @@ class Box2Box:
         # lambda functions:
         self._state1 = lambda holding: None
         self._state2 = lambda: None
-        self._state3 = lambda x : None
+        self._state3 = lambda x: None
 
     def update(self) -> str | None:
         msg = self.getInput()
@@ -232,7 +227,8 @@ class Box2Box:
             return self.parseInput(msg)
 
     def getInput(self):
-        messages = [self.Message(self.com_left.read(), self.com_left), self.Message(self.com_right.read(), self.com_right)]
+        messages = [self.Message(self.com_left.read(), self.com_left),
+                    self.Message(self.com_right.read(), self.com_right)]
 
         for msg in messages:
             if msg.msg:
@@ -241,12 +237,11 @@ class Box2Box:
     def parseInput(self, message: Message) -> None | str:
         msg = message.getMsg()
 
-
         if msg == None:
             return
 
         self.write(msg, self.getOtherCom(message.sender))
-        
+
         if msg[3] == '1':
             if msg[6:13] == "Holding":
                 try:
@@ -264,7 +259,7 @@ class Box2Box:
             try:
                 self._state2()
             except Exception as e:
-                    print(f'tried to call state2 but {e}')
+                print(f'tried to call state2 but {e}')
             return msg
         elif msg[3] == '3':
             try:
@@ -274,7 +269,6 @@ class Box2Box:
             return msg
         else:
             print(f'Malformed input: "{msg}"')
-            
 
     def getOtherCom(self, com: UART) -> UART:
         if com == self.com_left:
@@ -295,17 +289,15 @@ class Box2Box:
     def write(self, msg: str, com: UART | None = None):
         if com:
             com.write(msg.encode("utf-8"))
-        else: 
+        else:
             for com in [self.com_left, self.com_right]:
                 com.write(msg.encode("utf-8"))
-
 
 
 # ----------------------------------------------------------------------------------------------------
 # I2C Display
 # ----------------------------------------------------------------------------------------------------
 class LcdApi:
-    
     # Implements the API for talking with HD44780 compatible character LCDs.
     # This class only knows what commands to send to the LCD, and not how to get
     # them to the LCD.
@@ -314,38 +306,38 @@ class LcdApi:
     #
     # The following constant names were lifted from the avrlib lcd.h header file,
     # with bit numbers changed to bit masks.
-    
+
     # HD44780 LCD controller command set
-    LCD_CLR             = 0x01  # DB0: clear display
-    LCD_HOME            = 0x02  # DB1: return to home position
+    LCD_CLR = 0x01  # DB0: clear display
+    LCD_HOME = 0x02  # DB1: return to home position
 
-    LCD_ENTRY_MODE      = 0x04  # DB2: set entry mode
-    LCD_ENTRY_INC       = 0x02  # DB1: increment
-    LCD_ENTRY_SHIFT     = 0x01  # DB0: shift
+    LCD_ENTRY_MODE = 0x04  # DB2: set entry mode
+    LCD_ENTRY_INC = 0x02  # DB1: increment
+    LCD_ENTRY_SHIFT = 0x01  # DB0: shift
 
-    LCD_ON_CTRL         = 0x08  # DB3: turn lcd/cursor on
-    LCD_ON_DISPLAY      = 0x04  # DB2: turn display on
-    LCD_ON_CURSOR       = 0x02  # DB1: turn cursor on
-    LCD_ON_BLINK        = 0x01  # DB0: blinking cursor
+    LCD_ON_CTRL = 0x08  # DB3: turn lcd/cursor on
+    LCD_ON_DISPLAY = 0x04  # DB2: turn display on
+    LCD_ON_CURSOR = 0x02  # DB1: turn cursor on
+    LCD_ON_BLINK = 0x01  # DB0: blinking cursor
 
-    LCD_MOVE            = 0x10  # DB4: move cursor/display
-    LCD_MOVE_DISP       = 0x08  # DB3: move display (0-> move cursor)
-    LCD_MOVE_RIGHT      = 0x04  # DB2: move right (0-> left)
+    LCD_MOVE = 0x10  # DB4: move cursor/display
+    LCD_MOVE_DISP = 0x08  # DB3: move display (0-> move cursor)
+    LCD_MOVE_RIGHT = 0x04  # DB2: move right (0-> left)
 
-    LCD_FUNCTION        = 0x20  # DB5: function set
-    LCD_FUNCTION_8BIT   = 0x10  # DB4: set 8BIT mode (0->4BIT mode)
+    LCD_FUNCTION = 0x20  # DB5: function set
+    LCD_FUNCTION_8BIT = 0x10  # DB4: set 8BIT mode (0->4BIT mode)
     LCD_FUNCTION_2LINES = 0x08  # DB3: two lines (0->one line)
     LCD_FUNCTION_10DOTS = 0x04  # DB2: 5x10 font (0->5x7 font)
-    LCD_FUNCTION_RESET  = 0x30  # See "Initializing by Instruction" section
+    LCD_FUNCTION_RESET = 0x30  # See "Initializing by Instruction" section
 
-    LCD_CGRAM           = 0x40  # DB6: set CG RAM address
-    LCD_DDRAM           = 0x80  # DB7: set DD RAM address
+    LCD_CGRAM = 0x40  # DB6: set CG RAM address
+    LCD_DDRAM = 0x80  # DB7: set DD RAM address
 
-    LCD_RS_CMD          = 0
-    LCD_RS_DATA         = 1
+    LCD_RS_CMD = 0
+    LCD_RS_DATA = 1
 
-    LCD_RW_WRITE        = 0
-    LCD_RW_READ         = 1
+    LCD_RW_WRITE = 0
+    LCD_RW_READ = 1
 
     def __init__(self, num_lines, num_columns):
         self.num_lines = num_lines
@@ -404,7 +396,7 @@ class LcdApi:
 
     def backlight_on(self):
         # Turns the backlight on.
-        
+
         # This isn't really an LCD command, but some modules have backlight
         # controls, so this allows the hal to pass through the command.
         self.backlight = True
@@ -425,8 +417,8 @@ class LcdApi:
         self.cursor_y = cursor_y
         addr = cursor_x & 0x3f
         if cursor_y & 1:
-            addr += 0x40    # Lines 1 & 3 add 0x40
-        if cursor_y & 2:    # Lines 2 & 3 add number of columns
+            addr += 0x40  # Lines 1 & 3 add 0x40
+        if cursor_y & 2:  # Lines 2 & 3 add number of columns
             addr += self.num_columns
         self.hal_write_command(self.LCD_DDRAM | addr)
 
@@ -493,18 +485,18 @@ class LcdApi:
         time.sleep_us(usecs)
 
 
-
 # PCF8574 pin definitions
-MASK_RS = 0x01       # P0
-MASK_RW = 0x02       # P1
-MASK_E  = 0x04       # P2
+MASK_RS = 0x01  # P0
+MASK_RW = 0x02  # P1
+MASK_E = 0x04  # P2
 
 SHIFT_BACKLIGHT = 3  # P3
-SHIFT_DATA      = 4  # P4-P7
+SHIFT_DATA = 4  # P4-P7
+
 
 class I2cLcd(LcdApi):
-    
-    #Implements a HD44780 character LCD connected via PCF8574 on I2C
+
+    # Implements a HD44780 character LCD connected via PCF8574 on I2C
 
     def __init__(self, i2c, i2c_addr, num_lines, num_columns):
         self.i2c = i2c
@@ -515,10 +507,10 @@ class I2cLcd(LcdApi):
         except OSError:
             raise HardwareError("Could not connect to I2C Display. Check the pins and address.")
 
-        utime.sleep_ms(20)   # Allow LCD time to powerup
+        utime.sleep_ms(20)  # Allow LCD time to powerup
         # Send reset 3 times
         self.hal_write_init_nibble(self.LCD_FUNCTION_RESET)
-        utime.sleep_ms(5)    # Need to delay at least 4.1 msec
+        utime.sleep_ms(5)  # Need to delay at least 4.1 msec
         self.hal_write_init_nibble(self.LCD_FUNCTION_RESET)
         utime.sleep_ms(1)
         self.hal_write_init_nibble(self.LCD_FUNCTION_RESET)
@@ -540,17 +532,17 @@ class I2cLcd(LcdApi):
         self.i2c.writeto(self.i2c_addr, bytes([byte | MASK_E]))
         self.i2c.writeto(self.i2c_addr, bytes([byte]))
         gc.collect()
-        
+
     def hal_backlight_on(self):
         # Allows the hal layer to turn the backlight on
         self.i2c.writeto(self.i2c_addr, bytes([1 << SHIFT_BACKLIGHT]))
         gc.collect()
-        
+
     def hal_backlight_off(self):
-        #Allows the hal layer to turn the backlight off
+        # Allows the hal layer to turn the backlight off
         self.i2c.writeto(self.i2c_addr, bytes([0]))
         gc.collect()
-        
+
     def hal_write_command(self, cmd):
         # Write a command to the LCD. Data is latched on the falling edge of E.
         byte = ((self.backlight << SHIFT_BACKLIGHT) |
@@ -575,7 +567,7 @@ class I2cLcd(LcdApi):
         self.i2c.writeto(self.i2c_addr, bytes([byte]))
         byte = (MASK_RS |
                 (self.backlight << SHIFT_BACKLIGHT) |
-                ((data & 0x0f) << SHIFT_DATA))      
+                ((data & 0x0f) << SHIFT_DATA))
         self.i2c.writeto(self.i2c_addr, bytes([byte | MASK_E]))
         self.i2c.writeto(self.i2c_addr, bytes([byte]))
         gc.collect()
@@ -637,7 +629,6 @@ class TLC5947:
         # Set the BLANK pin low to enable output
         # self.blank.value(1)
 
-
         # Load the channel data
         for value in self.channel_data:
             for i in range(0, 12):
@@ -654,28 +645,26 @@ class TLC5947:
         # Reset the state changed flag
         self.state_changed = False
 
-    def set_channel(self, channel, value=4095//2):
+    def set_channel(self, channel, value=4095 // 2):
         gamma = 2.5
         value = int(pow(value / 255.0, gamma) * 255.0 + 0.5)
         # Only set the channel data and the state changed flag if the value is different
-        if value != self.channel_data[-channel-1]:
-            self.channel_data[-channel-1] = value
+        if value != self.channel_data[-channel - 1]:
+            self.channel_data[-channel - 1] = value
             self.state_changed = True
 
-    def set_led(self, id, inten = .5):
-        self.set_channel(id*3  , int(4095*inten))
-        self.set_channel(id*3+1, int(4095*inten))
-        self.set_channel(id*3+2, int(4095*inten))
-        
+    def set_led(self, id, inten=.5):
+        self.set_channel(id * 3, int(4095 * inten))
+        self.set_channel(id * 3 + 1, int(4095 * inten))
+        self.set_channel(id * 3 + 2, int(4095 * inten))
 
     def set_led_rgb(self, led: int, color: Color):
 
-        channels = [led for led in range(led*3, led*3+3)]
+        channels = [led for led in range(led * 3, led * 3 + 3)]
 
         # Set the values for the red, green, and blue channels of the LED
         for ch, cl in zip(channels, color.getValueAs12Bit()):
             self.set_channel(ch, cl)
-
 
     def set_all(self, value: int):
         for ch in range(24):
@@ -686,6 +675,7 @@ class TLC5947:
         for led in range(8):
             self.set_led_rgb(led, color)
         self.update()
+
 
 # ----------------------------------------------------------------------------------------------------
 # QuizBoxIO
@@ -722,19 +712,17 @@ class QuizBox:
             self.start = utime.time()
             self.seconds = time
 
-        
-
         def wholeSecondsRemaining(self):
             self.lastWholeSecond = round(self.seconds - (utime.time() - self.start))
             return self.lastWholeSecond
-            
+
         def wholeSecondHasChanged(self):
             if self.lastWholeSecond != self.wholeSecondsRemaining():
                 return True
             return False
 
     class Buzzer(Pin):
-        def __init__(self, id = 14):
+        def __init__(self, id=14):
             super().__init__(id, Pin.PULL_UP)
 
         def buzz(self, time: float):
@@ -757,11 +745,8 @@ class QuizBox:
             if self.value() == 1:
                 QuizBox.resetUpdate()
 
-
         def on_fall(self, pin):
             print("reset fell")
-
-
 
     def __init__(self) -> None:
 
@@ -785,8 +770,6 @@ class QuizBox:
         self.coms.setState2(lambda: QuizBox.setBoxState(2))
         self.coms.setState3(lambda x: QuizBox.setBoxState(3))
 
-
-
         self.quizzers = [
             Quizzer(16, 21, 1),
             Quizzer(17, 22, 2),
@@ -809,23 +792,22 @@ class QuizBox:
             self.display.clear()
             self.display.putstr(msg)
             print(msg)
-        
+
         # print([(self.quizzers[i].switchpin, self.quizzers[i].switchval) for i  in range(5)])
 
         # Set state lights to box state
-        for led, color in zip([5,6], self.colors[QuizBox.boxState]):
+        for led, color in zip([5, 6], self.colors[QuizBox.boxState]):
             self.tlc.set_led_rgb(led, color)
         self.tlc.update()
-
 
         if QuizBox.boxStateHasChanged:
             self.boxStateChange()
             QuizBox.boxStateHasChanged = False
-        
+
         if QuizBox.boxState == 1:
 
             for quizzer in self.quizzers:
-                if quizzer.bothread == (True,True):
+                if quizzer.bothread == (True, True):
                     self.tlc.set_led_rgb(quizzer.num - 1, QuizBox.color)
                 else:
                     self.tlc.set_led(quizzer.num - 1, 0)
@@ -834,7 +816,7 @@ class QuizBox:
         elif QuizBox.boxState == 2:
 
             for quizzer in self.quizzers:
-                if quizzer.bothread == (True,True):
+                if quizzer.bothread == (True, True):
                     self.tlc.set_led_rgb(quizzer.num - 1, QuizBox.color)
                     self.tlc.update()
                     self.buzzer.buzz(0.5)
@@ -845,7 +827,7 @@ class QuizBox:
             # Set display to show who jumped, show countdown 
             if self.timer.lastWholeSecond >= 0:
                 if self.timer.wholeSecondHasChanged():
-                    self.display.move_to(0,1)
+                    self.display.move_to(0, 1)
                     if self.timer.lastWholeSecond > 9:
                         self.display.putstr(f"{self.timer.wholeSecondsRemaining()}")
                     else:
@@ -857,30 +839,28 @@ class QuizBox:
         else:
             QuizBox.setBoxState(1)
             raise ValueError("ERROR: BoxState should be in [1,2,3]. Setting to 1")
-        
+
     def override_holding(self, holding: bool | None = None):
         if holding != None:
             self.HOLDING_OVERRIDE = holding
 
-
     @staticmethod
     def resetUpdate():
-        if QuizBox.boxState==1:
+        if QuizBox.boxState == 1:
             QuizBox.setBoxState(2)
-        elif QuizBox.boxState==2:
+        elif QuizBox.boxState == 2:
             QuizBox.setBoxState(1)
-        elif QuizBox.boxState==3:
+        elif QuizBox.boxState == 3:
             QuizBox.setBoxState(1)
 
         else:
             raise ValueError("ERROR: BoxState should be in [1,2,3]. Setting to 1")
 
-
     @staticmethod
     def setBoxState(state):
-        print(f"Setting boxState from {QuizBox.boxState} to {state} ({round(utime.time(),2)})")
+        print(f"Setting boxState from {QuizBox.boxState} to {state} ({round(utime.time(), 2)})")
 
-        if state in [1,2,3]:
+        if state in [1, 2, 3]:
             QuizBox.boxState = state
 
         QuizBox.boxStateHasChanged = True
@@ -920,7 +900,6 @@ class QuizBox:
         pass
 
 
-
 # ----------------------------------------------------------------------------------------------------
 # Main Code
 # ----------------------------------------------------------------------------------------------------
@@ -929,5 +908,6 @@ def main():
 
     while True:
         box.update()
+
 
 main()
