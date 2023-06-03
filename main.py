@@ -240,9 +240,9 @@ class Box2Box:
         if msg is None:
             return
 
-        if Box2Box.LATEST_MSG != message:
-            Box2Box.LATEST_MSG = message
-            self.write(msg, self.getOtherCom(message.sender))
+        # if Box2Box.LATEST_MSG != message:
+        #     Box2Box.LATEST_MSG = message
+        #     self.write(msg, self.getOtherCom(message.sender))
 
         if msg[3] == '1':
             if msg[6:13] == "Holding":
@@ -686,6 +686,7 @@ class QuizBox:
     DEBUG_MODE = True
     boxState = 1
     boxStateHasChanged = False
+    boxStateChangedExternally = False
     displaytimer = 0
     displaytimerbuffer = 0
     color = Color.fromHex("#F56600")
@@ -752,6 +753,7 @@ class QuizBox:
 
     def __init__(self) -> None:
 
+        self.HOLDING_OVERRIDE = None
         print("Initializing QuizBox\n----------------")
         print("Debug mode: " + "Enabled" if QuizBox.DEBUG_MODE else "Disabled")
 
@@ -768,9 +770,9 @@ class QuizBox:
 
         self.coms = Box2Box()
 
-        self.coms.setState1(lambda holding: (QuizBox.setBoxState(1), self.overide_holding(holding)))
-        self.coms.setState2(lambda: QuizBox.setBoxState(2))
-        self.coms.setState3(lambda x: QuizBox.setBoxState(3))
+        self.coms.setState1(lambda holding: (QuizBox.setBoxState(1, external=True), self.overide_holding(holding)))
+        self.coms.setState2(lambda: QuizBox.setBoxState(2, external=True))
+        self.coms.setState3(lambda x: QuizBox.setBoxState(3, external=True))
 
         self.quizzers = [
             Quizzer(16, 21, 1),
@@ -805,6 +807,7 @@ class QuizBox:
         if QuizBox.boxStateHasChanged:
             self.boxStateChange()
             QuizBox.boxStateHasChanged = False
+            QuizBox.boxStateChangedExternally = False
 
         if QuizBox.boxState == 1:
 
@@ -843,7 +846,7 @@ class QuizBox:
             raise ValueError("ERROR: BoxState should be in [1,2,3]. Setting to 1")
 
     def override_holding(self, holding: bool | None = None):
-        if holding != None:
+        if holding is not None:
             self.HOLDING_OVERRIDE = holding
 
     @staticmethod
@@ -859,13 +862,14 @@ class QuizBox:
             raise ValueError("ERROR: BoxState should be in [1,2,3]. Setting to 1")
 
     @staticmethod
-    def setBoxState(state):
+    def setBoxState(state, external=False):
         print(f"Setting boxState from {QuizBox.boxState} to {state} ({round(utime.time(), 2)})")
 
         if state in [1, 2, 3]:
             QuizBox.boxState = state
 
         QuizBox.boxStateHasChanged = True
+        QuizBox.boxStateChangedExternally = external
 
     def boxStateChange(self):
         self.display.clear()
@@ -891,16 +895,12 @@ class QuizBox:
         elif QuizBox.boxState == 3:
             param = f", Timer: {self.timer.wholeSecondsRemaining()}"
 
-        self.coms.write(f"<S: {QuizBox.boxState}{param}>")
-        print(f'sent state f"<S: {QuizBox.boxState}{param}>"')
+        if not QuizBox.boxStateChangedExternally:
+            self.coms.write(f"<S: {QuizBox.boxState}{param}>")
+            print(f'sent state f"<S: {QuizBox.boxState}{param}>"')
 
         if QuizBox.boxState == 3:
             self.timer.startCoutndown(32)
-
-    # TODO: Implement this
-    def sendToConnectedBoxes(self):
-        pass
-
 
 # ----------------------------------------------------------------------------------------------------
 # Main Code
