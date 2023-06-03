@@ -922,6 +922,8 @@ def main():
 
     box.display.clear()
 
+    box.display.putstr("State: Standby")
+
     while True:
         box.update()
 
