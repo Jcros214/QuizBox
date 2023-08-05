@@ -138,18 +138,65 @@ class Quizzer:
 # ----------------------------------------------------------------------------------------------------
 # QuizSite
 # ----------------------------------------------------------------------------------------------------
+import rp2
+import network
+import ubinascii
+import urequests as requests
+import time
+from secrets import secrets
+
+
 class QuizSite:
+    QUIZSITE_URL = secrets.QUIZBOX_SITE_URL
+
     def __init__(self) -> None:
-        pass
-        # Establish connection to internet
 
-    def get(self, key) -> str:
-        # Get value from internet
-        return str()
+        # Set country to avoid possible errors
+        rp2.country('US')
 
-    def post() -> None:
-        # Post value to internet
-        pass
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+
+        # See the MAC address in the wireless chip OTP
+        mac = self.get_mac_address()
+
+        ssid = secrets['ssid']
+        pw = secrets['pw']
+
+        wlan.connect(ssid, pw)
+
+        # Wait for connection with 10 second timeout
+        timeout = 10
+        while timeout > 0:
+            if wlan.status() < 0 or wlan.status() >= 3:
+                break
+            timeout -= 1
+            time.sleep(1)
+
+        wlan_status = wlan.status()
+
+        if wlan_status != 3:
+            raise RuntimeError('Wi-Fi connection failed')
+
+        # github_api_url = f"https://api.github.com/repos/jcros214/QuizBox/branches/{BRANCH}"
+        #
+        # api_request = requests.get(github_api_url, headers={'User-Agent': 'jcros214'})
+        #
+        # if api_request.status_code == 200:
+        #     checksum = api_request.json()['commit']['sha']
+        #     print(checksum)
+        #     with open('main_py_checksum.txt', 'w') as f:
+        #         f.write(checksum)
+        #
+        #     main_py_update_url = f"https://raw.githubusercontent.com/Jcros214/QuizBox/{BRANCH}/main.py"
+        #
+        #     request = requests.get(main_py_update_url)
+
+    def get_mac_address(self):
+        return ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+
+    def get_current_room(self):
+        requests.post(f"{self.QUIZSITE_URL}/api/get_room", data={"mac": self.get_mac_address()})
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -158,7 +205,7 @@ class QuizSite:
 class Box2Box:
     """
     Messages should be instructions.
-    
+
     b"<S: 1>"
     b"<S: 1, Holding>"
     b"<S: 2>"
@@ -754,6 +801,8 @@ class QuizBox:
             print("reset fell")
 
     def __init__(self) -> None:
+        self.site = QuizSite()
+        print(self.site.get_current_room())
 
         self.HOLDING_OVERRIDE = None
         print("Initializing QuizBox\n----------------")
@@ -831,7 +880,7 @@ class QuizBox:
                     break
 
         elif QuizBox.boxState == 3:
-            # Set display to show who jumped, show countdown 
+            # Set display to show who jumped, show countdown
             if self.timer.lastWholeSecond >= 0:
                 if self.timer.wholeSecondHasChanged():
                     self.display.move_to(0, 1)
